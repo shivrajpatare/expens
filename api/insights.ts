@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import { Readable } from 'stream';
-import { handleInsightsEndpoint } from './_lib/insightsHandler';
+import { handleInsightsEndpoint } from './_lib/insightsHandler.js';
 
 export interface VercelCompatibleRequest extends IncomingMessage {
   body?: unknown;
