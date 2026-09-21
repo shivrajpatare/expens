@@ -5,7 +5,7 @@
  * Injects the non-negotiable anti-hallucination and no-calculation contracts.
  */
 
-import type { InsightFacts } from '../insights/types.ts';
+import type { InsightFacts } from '../insights/types';
 
 export const SYSTEM_PROMPT = `You are an interpretation layer for a personal money tracker.
 Your job is to phrase patterns from supplied financial facts in clear, concise natural language.

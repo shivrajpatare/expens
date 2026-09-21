@@ -11,7 +11,7 @@ import {
   SYSTEM_PROMPT,
   buildUserPrompt,
   GROQ_STRUCTURED_OUTPUT_FORMAT
-} from '../src/domain/ai/buildInsightPrompt.ts';
+} from '../src/domain/ai/buildInsightPrompt';
 
 export async function handleInsightsEndpoint(
   req: IncomingMessage,
