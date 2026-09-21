@@ -3,3 +3,19 @@ dist
 .env
 .env.local
 *.tsbuildinfo
+
+# Private project specifications & documentation
+/ARCHITECTURE.md
+/BACKUP_FORMAT.md
+/DEVELOPMENT.md
+/PRIVACY.md
+/PRODUCT_CONSTITUTION.md
+/VISUAL_DNA.md
+/implementation_plan.md
+walkthrough*
+implementation_plan*
+
+# Internal test suites, QA scripts, and demo datasets
+scripts/test*
+scripts/verify*
+scripts/demoDataset.json
