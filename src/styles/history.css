@@ -1,0 +1,395 @@
+/* History & Calendar Styles - Silent Ledger Design System */
+
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  width: 100%;
+}
+
+/* History Context Header */
+.history-context-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 var(--space-2xs);
+}
+
+.history-context-title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.history-context-subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+/* Calendar Card */
+.calendar-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-level-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Calendar Navigation Header */
+.calendar-nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 0 var(--space-2xs);
+}
+
+.calendar-month-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.calendar-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.calendar-nav-btn {
+  width: var(--target-min);
+  height: var(--target-min);
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-subtle);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.calendar-nav-btn:hover {
+  background-color: var(--color-border-subtle);
+}
+
+.calendar-today-shortcut-btn {
+  height: 36px;
+  padding: 0 var(--space-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+  transition: all 0.15s ease;
+}
+
+.calendar-today-shortcut-btn:hover {
+  border-color: var(--color-text-secondary);
+}
+
+/* Calendar Grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  width: 100%;
+}
+
+.calendar-weekday-cell {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+/* Calendar Day Button */
+.calendar-day-btn {
+  width: 100%;
+  min-height: var(--target-min);
+  min-width: var(--target-min);
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  position: relative;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  padding: 4px 2px;
+}
+
+.calendar-day-btn:hover:not(.outside-month) {
+  background-color: var(--color-surface-subtle);
+}
+
+.calendar-day-btn.outside-month {
+  color: var(--color-text-tertiary);
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Today indicator */
+.calendar-day-btn.is-today {
+  border-color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+/* Selected Date */
+.calendar-day-btn.is-selected {
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  border-color: var(--color-accent);
+  font-weight: 600;
+}
+
+.calendar-day-btn.is-selected:hover {
+  background-color: var(--color-accent);
+}
+
+/* Indicators container under date number */
+.calendar-day-indicators {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 5px;
+}
+
+/* Activity dot (spending exists) */
+.day-indicator-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--color-text-secondary);
+}
+
+.calendar-day-btn.is-selected .day-indicator-dot {
+  background-color: var(--color-accent-text);
+}
+
+/* Over-limit dot (Terracotta Rose strictly using --status-over) */
+.day-indicator-dot.over-limit {
+  background-color: var(--status-over);
+}
+
+/* Selected Date Summary Card */
+.selected-date-summary-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-level-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.summary-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.summary-date-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.summary-date-title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.summary-custom-limit-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.btn-return-today {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+  transition: all 0.15s ease;
+}
+
+.btn-return-today:hover {
+  background-color: var(--color-border-subtle);
+}
+
+/* Financial Numbers Grid */
+.summary-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  border-top: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.summary-metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.summary-metric-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.summary-metric-value.over-limit {
+  color: var(--status-over);
+}
+
+/* Summary Status & Progress */
+.summary-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* History Expense Timeline */
+.history-expenses-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.history-expenses-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--space-2xs);
+}
+
+.history-expenses-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.history-expenses-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.history-expenses-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* Empty State for History Date */
+.history-empty-card {
+  background-color: var(--color-surface);
+  border: 1px dashed var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  text-align: center;
+}
+
+.history-empty-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+}
+
+.history-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.history-empty-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  max-width: 280px;
+}
+
+.btn-history-add {
+  margin-top: var(--space-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 var(--space-md);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  transition: opacity 0.15s ease;
+}
+
+.btn-history-add:hover {
+  opacity: 0.9;
+}

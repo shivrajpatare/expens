@@ -1,0 +1,32 @@
+/**
+ * Phase 10: Motion CSS Variables & Utilities
+ */
+
+:root {
+  --motion-duration-tap: 120ms;
+  --motion-duration-insert: 220ms;
+  --motion-duration-delete: 180ms;
+  --motion-duration-number: 240ms;
+  --motion-duration-overlimit: 260ms;
+  --motion-duration-sheet-enter: 280ms;
+  --motion-duration-sheet-exit: 200ms;
+  --motion-duration-progress: 320ms;
+  --motion-duration-view: 180ms;
+
+  --motion-ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-overlimit: ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration-tap: 0ms;
+    --motion-duration-insert: 0ms;
+    --motion-duration-delete: 0ms;
+    --motion-duration-number: 0ms;
+    --motion-duration-overlimit: 0ms;
+    --motion-duration-sheet-enter: 0ms;
+    --motion-duration-sheet-exit: 0ms;
+    --motion-duration-progress: 0ms;
+    --motion-duration-view: 0ms;
+  }
+}

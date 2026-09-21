@@ -1,0 +1,191 @@
+/* App Shell Layout Styles */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-canvas);
+  color: var(--color-text-primary);
+  position: relative;
+}
+
+/* App Header */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--color-canvas);
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding: env(safe-area-inset-top, 16px) var(--space-md) var(--space-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.header-subtitle {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.theme-toggle-btn {
+  width: var(--target-min);
+  height: var(--target-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-primary);
+}
+
+/* Centered Main Content Area */
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-md);
+  padding-bottom: calc(var(--target-min) + var(--space-2xl) + env(safe-area-inset-bottom, 16px));
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border-subtle);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.bottom-nav-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: calc(var(--target-min) + 12px);
+  padding: 0 var(--space-xs);
+}
+
+.nav-item {
+  flex: 1;
+  height: var(--target-min);
+  min-width: var(--target-min);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  text-decoration: none;
+}
+
+.nav-item:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-subtle);
+}
+
+.nav-item.active {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.nav-item.active .nav-icon-wrapper {
+  color: var(--color-accent);
+}
+
+.nav-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.nav-item.active .nav-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent);
+  margin-top: 2px;
+}
+
+/* View Placeholder Card */
+.view-placeholder-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl) var(--space-lg);
+  box-shadow: var(--shadow-level-1);
+  text-align: center;
+  margin-top: var(--space-md);
+}
+
+.view-placeholder-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.view-placeholder-desc {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  max-width: 380px;
+  margin: 0 auto var(--space-md);
+}
+
+.view-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.view-badge.safe {
+  background-color: var(--status-safe-surface);
+  color: var(--status-safe);
+}
+
+.view-badge.neutral {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+}
