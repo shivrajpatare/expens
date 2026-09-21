@@ -194,18 +194,16 @@ export const SettingsView: React.FC = () => {
 
   return (
     <div className="view-container">
-      <div className="view-placeholder-card" style={{ textAlign: 'left' }}>
-        <div style={{ textAlign: 'center', marginBottom: 'var(--space-md)' }}>
-          <div className="view-badge safe">Global Settings Shell</div>
-          <h2 className="view-placeholder-title" style={{ marginTop: 'var(--space-xs)' }}>
-            Application Settings
-          </h2>
-          <p className="view-placeholder-desc">
-            Structural settings controls for baseline daily limit, currency, theme, and data.
-          </p>
-        </div>
+      <div style={{ textAlign: 'left', marginBottom: 'var(--space-lg)' }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
+          Settings
+        </h2>
+        <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+          Preferences, Data &amp; Local Configuration
+        </span>
+      </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
           {/* Baseline Daily Limit */}
           <div style={{
             background: 'var(--color-surface-subtle)',
@@ -507,7 +505,6 @@ export const SettingsView: React.FC = () => {
             />
           </div>
         </div>
-      </div>
 
       {/* Backup / CSV Import Modal */}
       <BackupModal

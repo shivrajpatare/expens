@@ -175,8 +175,8 @@ export const InsightsView: React.FC = () => {
     <div className="insights-container">
       {/* View Header */}
       <div className="insights-header-row">
-        <h2 className="insights-title">Understanding</h2>
-        <span className="insights-subtitle">Weekly &amp; Monthly Spending Patterns</span>
+        <h2 className="insights-title">Insights</h2>
+        <span className="insights-subtitle">Weekly &amp; Monthly Understanding</span>
       </div>
 
       {/* 1. Period Switcher (Week / Month) */}

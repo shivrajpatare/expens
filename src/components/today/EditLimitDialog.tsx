@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useExpenses } from '../../context/ExpenseContext';
+import { useFocusTrap } from '../../lib/a11y/useFocusTrap';
 
 interface EditLimitDialogProps {
   date: string;
@@ -17,6 +18,14 @@ export const EditLimitDialog: React.FC<EditLimitDialogProps> = ({ date, isOpen, 
 
   const [limitStr, setLimitStr] = useState((currentOverride || baselineLimit).toString());
   const [error, setError] = useState<string | null>(null);
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useFocusTrap(dialogRef, isOpen, {
+    onEscape: onClose,
+    initialFocusRef: inputRef
+  });
 
   if (!isOpen) return null;
 
@@ -39,7 +48,7 @@ export const EditLimitDialog: React.FC<EditLimitDialogProps> = ({ date, isOpen, 
 
   return (
     <div className="sheet-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="edit-limit-title">
-      <div className="delete-dialog" onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} tabIndex={-1} className="delete-dialog" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 id="edit-limit-title" className="delete-dialog-title">Daily Spending Limit</h2>
           <button
@@ -68,6 +77,7 @@ export const EditLimitDialog: React.FC<EditLimitDialogProps> = ({ date, isOpen, 
               <span className="amount-currency-prefix">{currencySymbol}</span>
               <input
                 id="limit-override-input"
+                ref={inputRef}
                 type="number"
                 step="any"
                 min="1"

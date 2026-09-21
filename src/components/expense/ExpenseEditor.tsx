@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Expense } from '../../types/expense';
 import { useApp } from '../../context/AppContext';
@@ -6,6 +6,7 @@ import { useExpenses } from '../../context/ExpenseContext';
 import { ALL_CATEGORIES } from '../../utils/categoryClassifier';
 import { motionTokens, usePrefersReducedMotion } from '../../lib/motion/tokens';
 import { MotionButton } from '../motion/MotionButton';
+import { useFocusTrap } from '../../lib/a11y/useFocusTrap';
 
 interface ExpenseEditorProps {
   expense: Expense | null;
@@ -24,6 +25,14 @@ export const ExpenseEditor: React.FC<ExpenseEditorProps> = ({ expense, isOpen, o
   const [category, setCategory] = useState(expense?.category || '');
   const [descError, setDescError] = useState<string | null>(null);
   const [amountError, setAmountError] = useState<string | null>(null);
+
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const descInputRef = useRef<HTMLInputElement>(null);
+
+  useFocusTrap(sheetRef, isOpen, {
+    onEscape: onClose,
+    initialFocusRef: descInputRef
+  });
 
   // Sync state when expense changes
   React.useEffect(() => {
@@ -85,6 +94,8 @@ export const ExpenseEditor: React.FC<ExpenseEditorProps> = ({ expense, isOpen, o
           transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
         >
           <motion.div
+            ref={sheetRef}
+            tabIndex={-1}
             className="bottom-sheet"
             onClick={(e) => e.stopPropagation()}
             initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 100 }}
@@ -127,6 +138,7 @@ export const ExpenseEditor: React.FC<ExpenseEditorProps> = ({ expense, isOpen, o
                 <label htmlFor="edit-spending-on" className="form-label">Spending On</label>
                 <input
                   id="edit-spending-on"
+                  ref={descInputRef}
                   type="text"
                   className={`form-input ${descError ? 'error' : ''}`}
                   value={description}
@@ -140,7 +152,7 @@ export const ExpenseEditor: React.FC<ExpenseEditorProps> = ({ expense, isOpen, o
 
               {/* Amount */}
               <div className="form-group">
-                <label htmlFor="edit-amount" className="form-label">Amount</label>
+                <label htmlFor="edit-amount" className="form-label">Spending Amount</label>
                 <div className={`amount-input-wrapper ${amountError ? 'error' : ''}`}>
                   <span className="amount-currency-prefix">{currencySymbol}</span>
                   <input

@@ -168,7 +168,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({ isOpen, onClos
               {/* Amount */}
               <div className="form-group">
                 <label htmlFor="spending-amount-input" className="form-label">
-                  Amount
+                  Spending Amount
                 </label>
                 <div className={`amount-input-wrapper ${amountError ? 'error' : ''}`}>
                   <span className="amount-currency-prefix">{currencySymbol}</span>
