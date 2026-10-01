@@ -1,0 +1,686 @@
+/* Split Bill Styles — Silent Ledger (Phase 13) */
+
+/* Split Bill Sheet Specific Dimensions */
+.split-bill-sheet {
+  max-width: 580px;
+}
+
+/* Step Progress Dots */
+.split-step-indicators {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.step-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-border-subtle);
+  transition: all 0.2s ease;
+}
+
+.step-dot.active {
+  width: 18px;
+  background-color: var(--color-accent);
+}
+
+.step-dot.done {
+  background-color: var(--status-safe);
+}
+
+/* Form Step Layout */
+.split-form-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.step-prompt-note {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  background-color: var(--color-surface-subtle);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+}
+
+/* Action Rows */
+.split-action-row {
+  margin-top: var(--space-xs);
+}
+
+.split-dual-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.split-dual-actions .btn-secondary-action {
+  flex: 0 0 100px;
+}
+
+.split-dual-actions .btn-primary-action {
+  flex: 1;
+}
+
+/* Participants Component */
+.participant-rows-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.participants-list {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-level-1);
+}
+
+.participant-row {
+  min-height: 52px;
+  padding: var(--space-sm) var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: background-color 0.15s ease;
+}
+
+.participant-row:last-child {
+  border-bottom: none;
+}
+
+.participant-row.current-user-row {
+  background-color: var(--color-surface-subtle);
+}
+
+.participant-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+.participant-index {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  width: 16px;
+  text-align: center;
+}
+
+.participant-current-user-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.participant-name-static {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.participant-self-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.participant-name-input {
+  flex: 1;
+  height: 38px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
+  font-family: inherit;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.participant-name-input:focus {
+  outline: none;
+  background-color: var(--color-surface);
+  border-color: var(--color-border-subtle);
+}
+
+.participant-meta-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.participant-calculated-share {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.share-percentage {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.share-amount {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.btn-remove-participant {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+.btn-remove-participant:not(:disabled):hover {
+  color: var(--status-over);
+  background-color: var(--status-over-surface);
+}
+
+.btn-remove-participant:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.btn-add-person {
+  height: 42px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-subtle);
+  border: 1px dashed var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-add-person:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
+}
+
+/* Split Mode Selector Tabs */
+.split-mode-selector {
+  display: flex;
+  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 3px;
+}
+
+.split-mode-tab {
+  flex: 1;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+.split-mode-tab.active {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-level-1);
+}
+
+/* Equal Split View */
+.equal-split-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.equal-formula-badge {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-xs) var(--space-md);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* Percentage Split View & Allocation Bar */
+.percentage-split-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.split-allocation-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-level-1);
+}
+
+.allocation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.allocation-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.allocation-total-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.allocation-total-badge.valid {
+  background-color: var(--status-safe-surface);
+  color: var(--status-safe);
+}
+
+.allocation-total-badge.invalid {
+  background-color: var(--status-over-surface);
+  color: var(--status-over);
+}
+
+.allocation-bar-track {
+  height: 12px;
+  width: 100%;
+  background-color: var(--color-surface-subtle);
+  border-radius: var(--radius-full);
+  display: flex;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.allocation-bar-segment {
+  height: 100%;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.allocation-controls-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-top: var(--space-2xs);
+}
+
+.allocation-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 4px 0;
+}
+
+.allocation-person-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.allocation-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.allocation-person-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.allocation-person-name.current-user {
+  font-weight: 600;
+}
+
+.you-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.allocation-input-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  max-width: 260px;
+}
+
+.allocation-slider {
+  flex: 1;
+  accent-color: var(--color-accent);
+  height: 4px;
+  cursor: pointer;
+}
+
+.allocation-pct-stepper {
+  display: flex;
+  align-items: center;
+  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0 6px;
+  height: 32px;
+  width: 64px;
+}
+
+.allocation-num-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-align: right;
+  outline: none;
+  font-family: inherit;
+}
+
+.pct-symbol {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-left: 2px;
+}
+
+.allocation-error-note {
+  font-size: 12px;
+  color: var(--status-over);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* STEP 4: RESULT SCREEN */
+.split-result-step {
+  gap: var(--space-lg);
+}
+
+.result-bill-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 var(--space-2xs);
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: var(--space-sm);
+}
+
+.result-bill-label {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.result-bill-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.result-total-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+.result-total-val {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* Hero Card for Current User's Share */
+.user-share-hero-card {
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-level-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  position: relative;
+}
+
+.user-share-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-share-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.user-share-pct-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--status-safe);
+  background-color: var(--status-safe-surface);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.user-share-amount {
+  font-size: 36px;
+  line-height: 44px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.user-share-subtext {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* Breakdown of Other Shares */
+.result-breakdown-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.result-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  padding: 0 var(--space-2xs);
+}
+
+.result-shares-list {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.result-share-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.result-share-row:last-child {
+  border-bottom: none;
+}
+
+.result-share-row.current-user-share {
+  background-color: var(--color-surface-subtle);
+}
+
+.share-row-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.share-row-vals {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.share-pct {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.share-amt {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* Action Buttons */
+.result-actions-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.btn-add-share-action {
+  gap: 8px;
+}
+
+.result-nav-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.result-nav-row .btn-secondary-action {
+  flex: 1;
+}
+
+/* Trigger Button on Today View */
+.today-action-row {
+  display: flex;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.today-action-row .btn-add-expense-trigger {
+  flex: 2;
+}
+
+.btn-split-bill-trigger {
+  flex: 1;
+  height: var(--btn-height);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: var(--shadow-level-1);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-split-bill-trigger:hover {
+  background-color: var(--color-surface-subtle);
+  border-color: var(--color-text-secondary);
+}
+
+.btn-split-bill-trigger:active {
+  transform: scale(0.98);
+}
+
+/* Mobile Media Queries (<= 480px) */
+@media (max-width: 480px) {
+  .today-action-row {
+    flex-direction: row;
+  }
+
+  .today-action-row .btn-add-expense-trigger {
+    flex: 1.6;
+  }
+
+  .today-action-row .btn-split-bill-trigger {
+    flex: 1.4;
+    font-size: 13px;
+    padding: 0 8px;
+  }
+
+  .allocation-input-group {
+    max-width: 170px;
+  }
+
+  .user-share-amount {
+    font-size: 30px;
+    line-height: 38px;
+  }
+}
