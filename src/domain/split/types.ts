@@ -11,7 +11,7 @@ export interface Participant {
   isCurrentUser: boolean;
 }
 
-export type SplitMode = 'equal' | 'percentage';
+export type SplitMode = 'equal' | 'custom' | 'percentage';
 
 export interface ParticipantShare {
   participantId: string;
@@ -32,4 +32,5 @@ export interface SplitResult {
 export interface ValidationResult {
   isValid: boolean;
   error?: string;
+  diffCents?: number;
 }

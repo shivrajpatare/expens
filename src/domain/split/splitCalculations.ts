@@ -129,6 +129,53 @@ export function validateSplitInput(
     }
   }
 
+  // 8. Custom mode validation
+  if (mode === 'custom') {
+    if (!percentages || typeof percentages !== 'object') {
+      return {
+        isValid: false,
+        error: 'Custom amount allocations are required for custom split.'
+      };
+    }
+
+    const totalCents = roundToCents(billAmount);
+    let sumCents = 0;
+
+    for (const p of participants) {
+      const amt = percentages[p.id];
+      if (typeof amt !== 'number' || isNaN(amt) || !isFinite(amt)) {
+        return {
+          isValid: false,
+          error: `Missing or invalid amount for ${p.name}.`
+        };
+      }
+      if (amt < 0) {
+        return {
+          isValid: false,
+          error: `Amount for ${p.name} cannot be negative.`
+        };
+      }
+      sumCents += roundToCents(amt);
+    }
+
+    const diffCents = totalCents - sumCents;
+    if (diffCents !== 0) {
+      if (diffCents > 0) {
+        return {
+          isValid: false,
+          error: `Remaining to allocate: ₹${(diffCents / 100).toFixed(2)}`,
+          diffCents
+        };
+      } else {
+        return {
+          isValid: false,
+          error: `Over allocated by: ₹${(Math.abs(diffCents) / 100).toFixed(2)}`,
+          diffCents
+        };
+      }
+    }
+  }
+
   return { isValid: true };
 }
 
@@ -175,6 +222,51 @@ export function calculateEqualSplit(
     totalAmount: billAmount,
     label: label.trim(),
     mode: 'equal',
+    shares,
+    userShare
+  };
+}
+
+/**
+ * Calculates custom amount split.
+ * Guarantees that sum(shares.amount) === billAmount down to the smallest currency unit.
+ */
+export function calculateCustomSplit(
+  billAmount: number,
+  label: string,
+  participants: Participant[],
+  customAmounts: Record<string, number>
+): SplitResult {
+  const validation = validateSplitInput(billAmount, label, participants, 'custom', customAmounts);
+  if (!validation.isValid) {
+    throw new Error(validation.error || 'Invalid custom split parameters');
+  }
+
+  const totalCents = roundToCents(billAmount);
+
+  const shares: ParticipantShare[] = participants.map((p) => {
+    const pCents = roundToCents(customAmounts[p.id] || 0);
+    const amount = pCents / 100;
+    const percentage = totalCents > 0 ? Number(((pCents / totalCents) * 100).toFixed(2)) : 0;
+
+    return {
+      participantId: p.id,
+      name: p.name.trim(),
+      isCurrentUser: p.isCurrentUser,
+      percentage,
+      amount
+    };
+  });
+
+  const userShare = shares.find((s) => s.isCurrentUser);
+  if (!userShare) {
+    throw new Error('Current user share not found');
+  }
+
+  return {
+    totalAmount: billAmount,
+    label: label.trim(),
+    mode: 'custom',
     shares,
     userShare
   };
@@ -242,3 +334,4 @@ export function calculatePercentageSplit(
     userShare
   };
 }
+
