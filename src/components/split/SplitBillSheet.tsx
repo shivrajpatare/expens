@@ -8,7 +8,9 @@ import { MotionButton } from '../motion/MotionButton';
 import { Participant, SplitResult } from '../../domain/split/types';
 import {
   calculateEqualSplit,
-  calculateCustomSplit
+  calculateAutoBalancedSplit,
+  initializeAutoBalancedSplit,
+  AutoBalanceResult
 } from '../../domain/split/splitCalculations';
 import { ParticipantRows } from './ParticipantRows';
 import './split.css';
@@ -19,7 +21,7 @@ interface SplitBillSheetProps {
 }
 
 type SplitStep = 'details' | 'participants' | 'mode' | 'result';
-type AmountSplitMode = 'equal' | 'custom';
+type AmountSplitMode = 'equal' | 'adjust';
 
 export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose }) => {
   const { currencySymbol, activeDate } = useApp();
@@ -47,14 +49,17 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
     { id: 'user_p2', name: 'Friend A', isCurrentUser: false }
   ]);
 
-  // Custom Amounts Input State (Strings allow natural decimal typing)
+  // Autonomous Balancing State (Phase 13B)
+  const [autoBalancedSplitResult, setAutoBalancedSplitResult] = useState<AutoBalanceResult | null>(null);
+  const [residualParticipantId, setResidualParticipantId] = useState<string>('');
+  const [editHistory, setEditHistory] = useState<string[]>([]);
+  const [currentAmounts, setCurrentAmounts] = useState<Record<string, number>>({});
   const [customAmountStrings, setCustomAmountStrings] = useState<Record<string, string>>({});
 
   // Validation Errors
   const [labelError, setLabelError] = useState<string | null>(null);
   const [amountError, setAmountError] = useState<string | null>(null);
   const [participantsError, setParticipantsError] = useState<string | null>(null);
-  const [modeError, setModeError] = useState<string | null>(null);
 
   // Success Recording State
   const [isAdded, setIsAdded] = useState(false);
@@ -70,30 +75,43 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
         { id: 'user_self', name: 'You', isCurrentUser: true },
         { id: 'user_p2', name: 'Friend A', isCurrentUser: false }
       ]);
+      setAutoBalancedSplitResult(null);
+      setResidualParticipantId('');
+      setEditHistory([]);
+      setCurrentAmounts({});
       setCustomAmountStrings({});
       setLabelError(null);
       setAmountError(null);
       setParticipantsError(null);
-      setModeError(null);
       setIsAdded(false);
     }
   }, [isOpen]);
 
   const parsedAmount = parseFloat(amountStr) || 0;
-  const totalCents = Math.round(parsedAmount * 100);
 
-  // Helper to initialize custom amounts from deterministic equal split
-  const initCustomAmountsFromEqual = (currentParticipants: Participant[], total: number) => {
-    if (total <= 0 || currentParticipants.length < 2) return;
+  // Helper to initialize autonomous balanced split from baseline
+  const initAdjustSplit = (
+    currentParticipants: Participant[],
+    total: number,
+    billLabel: string
+  ): AutoBalanceResult | null => {
+    if (total <= 0 || currentParticipants.length < 2) return null;
     try {
-      const eq = calculateEqualSplit(total, 'temp', currentParticipants);
-      const map: Record<string, string> = {};
-      eq.shares.forEach((s) => {
-        map[s.participantId] = s.amount.toFixed(2);
+      const init = initializeAutoBalancedSplit(total, billLabel.trim() || 'Split Bill', currentParticipants);
+      setAutoBalancedSplitResult(init);
+      setResidualParticipantId(init.residualParticipantId || '');
+      setEditHistory([]);
+      const amounts: Record<string, number> = {};
+      const strings: Record<string, string> = {};
+      init.shares.forEach((s) => {
+        amounts[s.participantId] = s.amount;
+        strings[s.participantId] = s.amount.toFixed(2);
       });
-      setCustomAmountStrings(map);
+      setCurrentAmounts(amounts);
+      setCustomAmountStrings(strings);
+      return init;
     } catch {
-      // Ignore fallback
+      return null;
     }
   };
 
@@ -109,6 +127,10 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
 
     const nextList = [...participants, newPerson];
     setParticipants(nextList);
+    setAutoBalancedSplitResult(null);
+    setResidualParticipantId('');
+    setEditHistory([]);
+    setCurrentAmounts({});
     setCustomAmountStrings({});
     setParticipantsError(null);
   };
@@ -117,6 +139,10 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
     if (participants.length <= 2) return;
     const nextList = participants.filter((p) => p.id !== id);
     setParticipants(nextList);
+    setAutoBalancedSplitResult(null);
+    setResidualParticipantId('');
+    setEditHistory([]);
+    setCurrentAmounts({});
     setCustomAmountStrings({});
   };
 
@@ -127,37 +153,64 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
     if (participantsError) setParticipantsError(null);
   };
 
-  const handleCustomAmountChange = (participantId: string, valStr: string) => {
+  // Autonomous Adjustment Handler (Phase 13B)
+  const handleAdjustAmountChange = (participantId: string, valStr: string) => {
+    // Preserve exact typed string for the focused input
     setCustomAmountStrings((prev) => ({
       ...prev,
       [participantId]: valStr
     }));
-    setModeError(null);
+
+    const numVal = parseFloat(valStr);
+    const validNum = !isNaN(numVal) && isFinite(numVal) ? Math.max(0, numVal) : 0;
+
+    const fallbackResidual =
+      participants.slice().reverse().find((p) => !p.isCurrentUser)?.id ||
+      participants[participants.length - 1].id;
+    const activeResidual = residualParticipantId || fallbackResidual;
+
+    try {
+      const nextSplit = calculateAutoBalancedSplit({
+        billAmount: parsedAmount,
+        label: label.trim() || 'Split Bill',
+        participants,
+        currentAmounts,
+        residualParticipantId: activeResidual,
+        editedParticipantId: participantId,
+        newAmount: validNum,
+        editHistory
+      });
+
+      setAutoBalancedSplitResult(nextSplit);
+      setResidualParticipantId(nextSplit.residualParticipantId!);
+      setEditHistory(nextSplit.editHistory || []);
+
+      const nextAmounts: Record<string, number> = {};
+      const nextStrings: Record<string, string> = {};
+      nextSplit.shares.forEach((s) => {
+        nextAmounts[s.participantId] = s.amount;
+        if (s.participantId === participantId) {
+          nextStrings[s.participantId] = valStr;
+        } else {
+          nextStrings[s.participantId] = s.amount.toFixed(2);
+        }
+      });
+      setCurrentAmounts(nextAmounts);
+      setCustomAmountStrings(nextStrings);
+    } catch {
+      // Graceful fallback
+    }
   };
 
-  // Custom Allocations & Real-Time Reconciliation
-  const customAllocations = useMemo<Record<string, number>>(() => {
-    const map: Record<string, number> = {};
-    participants.forEach((p) => {
-      const raw = customAmountStrings[p.id];
-      const val = raw !== undefined && raw.trim() !== '' ? parseFloat(raw) : 0;
-      map[p.id] = isNaN(val) ? 0 : Math.max(0, val);
-    });
-    return map;
-  }, [participants, customAmountStrings]);
+  const handleAdjustAmountBlur = (participantId: string) => {
+    const currentAmt = currentAmounts[participantId] ?? 0;
+    setCustomAmountStrings((prev) => ({
+      ...prev,
+      [participantId]: currentAmt.toFixed(2)
+    }));
+  };
 
-  const allocatedCents = useMemo<number>(() => {
-    return participants.reduce((sum, p) => {
-      return sum + Math.round((customAllocations[p.id] || 0) * 100);
-    }, 0);
-  }, [participants, customAllocations]);
-
-  const diffCents = totalCents - allocatedCents;
-  const isReconciled = diffCents === 0 && totalCents > 0;
-  const isOver = diffCents < 0;
-  const isUnder = diffCents > 0;
-
-  // Live Computed Split Result
+  // Live Computed Split Result (Guaranteed 100% Reconciled)
   const splitResult = useMemo<SplitResult | null>(() => {
     if (parsedAmount <= 0 || !label.trim() || participants.length < 2) return null;
 
@@ -165,13 +218,15 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
       if (mode === 'equal') {
         return calculateEqualSplit(parsedAmount, label, participants);
       } else {
-        if (!isReconciled) return null;
-        return calculateCustomSplit(parsedAmount, label, participants, customAllocations);
+        if (autoBalancedSplitResult && autoBalancedSplitResult.totalAmount === parsedAmount) {
+          return autoBalancedSplitResult;
+        }
+        return initializeAutoBalancedSplit(parsedAmount, label, participants);
       }
     } catch {
       return null;
     }
-  }, [parsedAmount, label, participants, mode, isReconciled, customAllocations]);
+  }, [parsedAmount, label, participants, mode, autoBalancedSplitResult]);
 
   // Step 1 validation
   const validateStep1 = (): boolean => {
@@ -226,31 +281,19 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
 
   const handleProceedFromParticipants = () => {
     if (validateStep2()) {
-      if (Object.keys(customAmountStrings).length === 0) {
-        initCustomAmountsFromEqual(participants, parsedAmount);
-      }
+      initAdjustSplit(participants, parsedAmount, label);
       setStep('mode');
     }
   };
 
-  const handleSelectCustomMode = () => {
-    setMode('custom');
-    setModeError(null);
-    if (Object.keys(customAmountStrings).length === 0) {
-      initCustomAmountsFromEqual(participants, parsedAmount);
+  const handleSelectAdjustMode = () => {
+    setMode('adjust');
+    if (!autoBalancedSplitResult || autoBalancedSplitResult.totalAmount !== parsedAmount) {
+      initAdjustSplit(participants, parsedAmount, label);
     }
   };
 
   const handleProceedToResult = () => {
-    if (mode === 'custom' && !isReconciled) {
-      if (isUnder) {
-        setModeError(`Allocate remaining ${currencySymbol}${((diffCents) / 100).toFixed(2)} to proceed.`);
-      } else {
-        setModeError(`Reduce allocation by ${currencySymbol}${((Math.abs(diffCents)) / 100).toFixed(2)} to proceed.`);
-      }
-      return;
-    }
-    setModeError(null);
     setStep('result');
   };
 
@@ -283,13 +326,6 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
         return 'Split Bill — Review Split';
     }
   };
-
-  // User share amount in custom mode for live feedback
-  const customUserShareAmount = customAllocations['user_self'] || 0;
-  const customUserSharePct =
-    totalCents > 0
-      ? ((Math.round(customUserShareAmount * 100) / totalCents) * 100).toFixed(1)
-      : '0';
 
   return (
     <AnimatePresence>
@@ -455,28 +491,25 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
                   <p className="split-overview-hint">Choose how much each person pays.</p>
                 </div>
 
-                {/* Amount-First Segmented Mode Selector: Equal (Default) / Custom */}
+                {/* Amount-First Segmented Mode Selector: Equal (Default) / Adjust */}
                 <div className="split-mode-selector" role="radiogroup" aria-label="Split mode">
                   <button
                     type="button"
                     role="radio"
                     aria-checked={mode === 'equal'}
                     className={`split-mode-tab ${mode === 'equal' ? 'active' : ''}`}
-                    onClick={() => {
-                      setMode('equal');
-                      setModeError(null);
-                    }}
+                    onClick={() => setMode('equal')}
                   >
                     Equal
                   </button>
                   <button
                     type="button"
                     role="radio"
-                    aria-checked={mode === 'custom'}
-                    className={`split-mode-tab ${mode === 'custom' ? 'active' : ''}`}
-                    onClick={handleSelectCustomMode}
+                    aria-checked={mode === 'adjust'}
+                    className={`split-mode-tab ${mode === 'adjust' ? 'active' : ''}`}
+                    onClick={handleSelectAdjustMode}
                   >
-                    Custom
+                    Adjust
                   </button>
                 </div>
 
@@ -525,72 +558,52 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
                   </div>
                 )}
 
-                {/* CUSTOM MODE VIEW — DIRECT AMOUNT-FIRST ENTRY */}
-                {mode === 'custom' && (
-                  <div className="custom-split-view">
-                    {/* Real-time Reconciliation Status */}
-                    <div className={`reconciliation-status-card ${isReconciled ? 'reconciled' : isOver ? 'over' : 'under'}`}>
-                      <div className="reconciliation-row">
-                        <div className="reconciliation-metric">
-                          <span className="metric-label">Total Bill</span>
-                          <span className="metric-value tabular-nums">{currencySymbol}{parsedAmount.toFixed(2)}</span>
-                        </div>
-                        <div className="reconciliation-divider">/</div>
-                        <div className="reconciliation-metric">
-                          <span className="metric-label">Allocated</span>
-                          <span className="metric-value tabular-nums">{currencySymbol}{(allocatedCents / 100).toFixed(2)}</span>
-                        </div>
-                      </div>
-
-                      <div className="reconciliation-status-text" role="status" aria-live="polite">
-                        {isReconciled && (
-                          <span className="status-success">
-                            ✓ Bill fully split ({currencySymbol}{parsedAmount.toFixed(2)} allocated)
-                          </span>
-                        )}
-                        {isUnder && (
-                          <span className="status-remaining">
-                            ℹ {currencySymbol}{((diffCents) / 100).toFixed(2)} remaining
-                          </span>
-                        )}
-                        {isOver && (
-                          <span className="status-over">
-                            ⚠ {currencySymbol}{((Math.abs(diffCents)) / 100).toFixed(2)} over
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
+                {/* ADJUST MODE VIEW — AUTONOMOUS RESIDUAL BALANCING (PHASE 13B) */}
+                {mode === 'adjust' && splitResult && (
+                  <div className="adjust-split-view">
                     {/* Direct Amount Inputs Per Participant */}
-                    <div className="custom-participants-list">
-                      {participants.map((p) => {
-                        const pCents = Math.round((customAllocations[p.id] || 0) * 100);
-                        const pPct = totalCents > 0 ? ((pCents / totalCents) * 100).toFixed(0) : '0';
+                    <div className="adjust-participants-list">
+                      {splitResult.shares.map((share) => {
+                        const isResidual =
+                          share.participantId === (residualParticipantId || splitResult.residualParticipantId);
 
                         return (
                           <div
-                            key={p.id}
-                            className={`custom-participant-row ${p.isCurrentUser ? 'current-user-row' : ''}`}
+                            key={share.participantId}
+                            className={`adjust-participant-row ${share.isCurrentUser ? 'current-user-row' : ''}`}
                           >
-                            <div className="custom-participant-info">
-                              <span className="custom-participant-name">{p.isCurrentUser ? 'You' : p.name}</span>
-                              {p.isCurrentUser && <span className="participant-self-badge">Your Share</span>}
-                              {totalCents > 0 && (
-                                <span className="custom-participant-pct tabular-nums">{pPct}%</span>
+                            <div className="adjust-participant-info">
+                              <span className="adjust-participant-name">
+                                {share.isCurrentUser ? 'You' : share.name}
+                              </span>
+                              {share.isCurrentUser && (
+                                <span className="participant-self-badge">Your Share</span>
                               )}
+                              {isResidual && (
+                                <span
+                                  className="participant-auto-badge"
+                                  title="This share adjusts automatically to keep the bill balanced"
+                                >
+                                  Auto
+                                </span>
+                              )}
+                              <span className="adjust-participant-pct tabular-nums">
+                                {share.percentage}%
+                              </span>
                             </div>
 
-                            <div className="custom-amount-input-wrapper">
-                              <span className="custom-currency-prefix">{currencySymbol}</span>
+                            <div className="adjust-amount-input-wrapper">
+                              <span className="adjust-currency-prefix">{currencySymbol}</span>
                               <input
                                 type="number"
                                 step="any"
                                 min="0"
-                                className="custom-amount-input tabular-nums"
+                                className={`adjust-amount-input tabular-nums ${isResidual ? 'is-auto-rebalanced' : ''}`}
                                 placeholder="0.00"
-                                value={customAmountStrings[p.id] ?? ''}
-                                aria-label={`Amount for ${p.name}`}
-                                onChange={(e) => handleCustomAmountChange(p.id, e.target.value)}
+                                value={customAmountStrings[share.participantId] ?? share.amount.toFixed(2)}
+                                aria-label={`Amount for ${share.name}`}
+                                onChange={(e) => handleAdjustAmountChange(share.participantId, e.target.value)}
+                                onBlur={() => handleAdjustAmountBlur(share.participantId)}
                               />
                             </div>
                           </div>
@@ -598,16 +611,20 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
                       })}
                     </div>
 
-                    {/* Visually Prominent User Share in Custom Mode */}
+                    {/* Reassurance Notice — Autonomous Balancing */}
+                    <div className="adjust-reassurance-row">
+                      <span className="adjust-auto-hint">Other shares adjust automatically.</span>
+                      <span className="adjust-status-reconciled">✓ Bill fully split</span>
+                    </div>
+
+                    {/* Visually Prominent User Share in Adjust Mode */}
                     <div className="user-share-hero-card">
                       <div className="user-share-meta">
                         <span className="user-share-title">YOUR SHARE</span>
-                        {totalCents > 0 && (
-                          <span className="user-share-pct-badge">{customUserSharePct}% of bill</span>
-                        )}
+                        <span className="user-share-pct-badge">{splitResult.userShare.percentage}% of bill</span>
                       </div>
                       <div className="user-share-amount tabular-nums">
-                        {currencySymbol}{customUserShareAmount.toFixed(2)}
+                        {currencySymbol}{splitResult.userShare.amount.toFixed(2)}
                       </div>
                       <div className="user-share-subtext">
                         Only this amount will be added to your expenses.
@@ -615,8 +632,6 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
                     </div>
                   </div>
                 )}
-
-                {modeError && <span className="form-error">{modeError}</span>}
 
                 {/* Mode Action Buttons */}
                 <div className="split-dual-actions">
@@ -630,22 +645,11 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
                   <MotionButton
                     type="button"
                     className="btn-primary-action"
-                    disabled={mode === 'custom' && !isReconciled}
                     onClick={handleProceedToResult}
                   >
                     Review Split
                   </MotionButton>
                 </div>
-
-                {mode === 'custom' && !isReconciled && (
-                  <div className="review-disabled-helper" role="alert">
-                    {isUnder ? (
-                      <span>Allocate remaining {currencySymbol}{((diffCents) / 100).toFixed(2)} to proceed</span>
-                    ) : (
-                      <span>Reduce allocation by {currencySymbol}{((Math.abs(diffCents)) / 100).toFixed(2)} to proceed</span>
-                    )}
-                  </div>
-                )}
               </div>
             )}
 

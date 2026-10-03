@@ -369,89 +369,14 @@
   color: var(--color-text-primary);
 }
 
-/* Custom Split View — Direct Amount Entry */
-.custom-split-view {
+/* Adjust Split View — Autonomous Residual Balancing (Phase 13B) */
+.adjust-split-view {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
 }
 
-.reconciliation-status-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-subtle);
-  background-color: var(--color-surface);
-  box-shadow: var(--shadow-level-1);
-  transition: all 0.15s ease;
-}
-
-.reconciliation-status-card.reconciled {
-  border-color: var(--status-safe);
-  background-color: var(--status-safe-surface);
-}
-
-.reconciliation-status-card.under {
-  border-color: var(--color-border-subtle);
-  background-color: var(--color-surface-subtle);
-}
-
-.reconciliation-status-card.over {
-  border-color: var(--status-over);
-  background-color: var(--status-over-surface);
-}
-
-.reconciliation-row {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-md);
-}
-
-.reconciliation-metric {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.reconciliation-metric .metric-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-text-secondary);
-}
-
-.reconciliation-metric .metric-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.reconciliation-divider {
-  font-size: 13px;
-  color: var(--color-text-tertiary);
-}
-
-.reconciliation-status-text {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.status-success {
-  color: var(--status-safe);
-}
-
-.status-remaining {
-  color: var(--color-text-secondary);
-}
-
-.status-over {
-  color: var(--status-over);
-}
-
-.custom-participants-list {
+.adjust-participants-list {
   display: flex;
   flex-direction: column;
   background-color: var(--color-surface);
@@ -461,7 +386,7 @@
   box-shadow: var(--shadow-level-1);
 }
 
-.custom-participant-row {
+.adjust-participant-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -470,15 +395,15 @@
   border-bottom: 1px solid var(--color-border-subtle);
 }
 
-.custom-participant-row:last-child {
+.adjust-participant-row:last-child {
   border-bottom: none;
 }
 
-.custom-participant-row.current-user-row {
+.adjust-participant-row.current-user-row {
   background-color: var(--color-surface-subtle);
 }
 
-.custom-participant-info {
+.adjust-participant-info {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -486,13 +411,27 @@
   min-width: 0;
 }
 
-.custom-participant-name {
+.adjust-participant-name {
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text-primary);
 }
 
-.custom-participant-pct {
+.participant-auto-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-subtle);
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.adjust-participant-pct {
   font-size: 11px;
   font-weight: 500;
   padding: 1px 6px;
@@ -502,7 +441,7 @@
   border: 1px solid var(--color-border-subtle);
 }
 
-.custom-amount-input-wrapper {
+.adjust-amount-input-wrapper {
   display: flex;
   align-items: center;
   background-color: var(--color-surface);
@@ -511,22 +450,22 @@
   padding: 0 8px;
   height: 38px;
   width: 120px;
-  transition: all 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.custom-amount-input-wrapper:focus-within {
+.adjust-amount-input-wrapper:focus-within {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 1px var(--color-accent);
 }
 
-.custom-currency-prefix {
+.adjust-currency-prefix {
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text-secondary);
   margin-right: 4px;
 }
 
-.custom-amount-input {
+.adjust-amount-input {
   width: 100%;
   border: none;
   background: transparent;
@@ -536,14 +475,30 @@
   text-align: right;
   outline: none;
   font-family: inherit;
+  transition: color 0.25s ease;
 }
 
-.review-disabled-helper {
+.adjust-amount-input.is-auto-rebalanced {
+  font-weight: 600;
+}
+
+/* Subtle Reassurance Notice */
+.adjust-reassurance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px;
   font-size: 12px;
-  font-weight: 500;
-  text-align: center;
+}
+
+.adjust-auto-hint {
   color: var(--color-text-secondary);
-  padding: 4px 8px;
+  font-weight: 500;
+}
+
+.adjust-status-reconciled {
+  color: var(--status-safe);
+  font-weight: 600;
 }
 
 /* STEP 4: RESULT SCREEN */
