@@ -369,7 +369,7 @@
   color: var(--color-text-primary);
 }
 
-/* Adjust Split View — Autonomous Residual Balancing (Phase 13B) */
+/* Adjust Split View — Proportional Autonomous Balancing (Phase 13C) */
 .adjust-split-view {
   display: flex;
   flex-direction: column;
@@ -417,30 +417,6 @@
   color: var(--color-text-primary);
 }
 
-.participant-auto-badge {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 2px 7px;
-  border-radius: var(--radius-full);
-  background-color: var(--color-surface-subtle);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border-subtle);
-  user-select: none;
-  transition: all 0.2s ease;
-}
-
-.adjust-participant-pct {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 1px 6px;
-  border-radius: var(--radius-full);
-  background-color: var(--color-surface-subtle);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border-subtle);
-}
-
 .adjust-amount-input-wrapper {
   display: flex;
   align-items: center;
@@ -476,10 +452,6 @@
   outline: none;
   font-family: inherit;
   transition: color 0.25s ease;
-}
-
-.adjust-amount-input.is-auto-rebalanced {
-  font-weight: 600;
 }
 
 /* Subtle Reassurance Notice */

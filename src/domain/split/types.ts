@@ -19,7 +19,6 @@ export interface ParticipantShare {
   isCurrentUser: boolean;
   percentage: number;
   amount: number;
-  isResidual?: boolean;
 }
 
 export interface SplitResult {
@@ -28,8 +27,6 @@ export interface SplitResult {
   mode: SplitMode;
   shares: ParticipantShare[];
   userShare: ParticipantShare;
-  residualParticipantId?: string;
-  editHistory?: string[];
 }
 
 export interface ValidationResult {

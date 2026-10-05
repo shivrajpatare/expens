@@ -8,9 +8,8 @@ import { MotionButton } from '../motion/MotionButton';
 import { Participant, SplitResult } from '../../domain/split/types';
 import {
   calculateEqualSplit,
-  calculateAutoBalancedSplit,
-  initializeAutoBalancedSplit,
-  AutoBalanceResult
+  calculateProportionalSplit,
+  initializeProportionalSplit
 } from '../../domain/split/splitCalculations';
 import { ParticipantRows } from './ParticipantRows';
 import './split.css';
@@ -49,10 +48,8 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
     { id: 'user_p2', name: 'Friend A', isCurrentUser: false }
   ]);
 
-  // Autonomous Balancing State (Phase 13B)
-  const [autoBalancedSplitResult, setAutoBalancedSplitResult] = useState<AutoBalanceResult | null>(null);
-  const [residualParticipantId, setResidualParticipantId] = useState<string>('');
-  const [editHistory, setEditHistory] = useState<string[]>([]);
+  // Proportional Autonomous Balancing State (Phase 13C - No residual, no Auto person)
+  const [adjustSplitResult, setAdjustSplitResult] = useState<SplitResult | null>(null);
   const [currentAmounts, setCurrentAmounts] = useState<Record<string, number>>({});
   const [customAmountStrings, setCustomAmountStrings] = useState<Record<string, string>>({});
 
@@ -75,9 +72,7 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
         { id: 'user_self', name: 'You', isCurrentUser: true },
         { id: 'user_p2', name: 'Friend A', isCurrentUser: false }
       ]);
-      setAutoBalancedSplitResult(null);
-      setResidualParticipantId('');
-      setEditHistory([]);
+      setAdjustSplitResult(null);
       setCurrentAmounts({});
       setCustomAmountStrings({});
       setLabelError(null);
@@ -89,18 +84,16 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
 
   const parsedAmount = parseFloat(amountStr) || 0;
 
-  // Helper to initialize autonomous balanced split from baseline
+  // Helper to initialize proportional balanced split from baseline
   const initAdjustSplit = (
     currentParticipants: Participant[],
     total: number,
     billLabel: string
-  ): AutoBalanceResult | null => {
+  ): SplitResult | null => {
     if (total <= 0 || currentParticipants.length < 2) return null;
     try {
-      const init = initializeAutoBalancedSplit(total, billLabel.trim() || 'Split Bill', currentParticipants);
-      setAutoBalancedSplitResult(init);
-      setResidualParticipantId(init.residualParticipantId || '');
-      setEditHistory([]);
+      const init = initializeProportionalSplit(total, billLabel.trim() || 'Split Bill', currentParticipants);
+      setAdjustSplitResult(init);
       const amounts: Record<string, number> = {};
       const strings: Record<string, string> = {};
       init.shares.forEach((s) => {
@@ -127,9 +120,7 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
 
     const nextList = [...participants, newPerson];
     setParticipants(nextList);
-    setAutoBalancedSplitResult(null);
-    setResidualParticipantId('');
-    setEditHistory([]);
+    setAdjustSplitResult(null);
     setCurrentAmounts({});
     setCustomAmountStrings({});
     setParticipantsError(null);
@@ -139,9 +130,7 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
     if (participants.length <= 2) return;
     const nextList = participants.filter((p) => p.id !== id);
     setParticipants(nextList);
-    setAutoBalancedSplitResult(null);
-    setResidualParticipantId('');
-    setEditHistory([]);
+    setAdjustSplitResult(null);
     setCurrentAmounts({});
     setCustomAmountStrings({});
   };
@@ -153,7 +142,7 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
     if (participantsError) setParticipantsError(null);
   };
 
-  // Autonomous Adjustment Handler (Phase 13B)
+  // Proportional Autonomous Adjustment Handler (Phase 13C)
   const handleAdjustAmountChange = (participantId: string, valStr: string) => {
     // Preserve exact typed string for the focused input
     setCustomAmountStrings((prev) => ({
@@ -164,26 +153,17 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
     const numVal = parseFloat(valStr);
     const validNum = !isNaN(numVal) && isFinite(numVal) ? Math.max(0, numVal) : 0;
 
-    const fallbackResidual =
-      participants.slice().reverse().find((p) => !p.isCurrentUser)?.id ||
-      participants[participants.length - 1].id;
-    const activeResidual = residualParticipantId || fallbackResidual;
-
     try {
-      const nextSplit = calculateAutoBalancedSplit({
+      const nextSplit = calculateProportionalSplit({
         billAmount: parsedAmount,
         label: label.trim() || 'Split Bill',
         participants,
         currentAmounts,
-        residualParticipantId: activeResidual,
         editedParticipantId: participantId,
-        newAmount: validNum,
-        editHistory
+        newAmount: validNum
       });
 
-      setAutoBalancedSplitResult(nextSplit);
-      setResidualParticipantId(nextSplit.residualParticipantId!);
-      setEditHistory(nextSplit.editHistory || []);
+      setAdjustSplitResult(nextSplit);
 
       const nextAmounts: Record<string, number> = {};
       const nextStrings: Record<string, string> = {};
@@ -218,15 +198,15 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
       if (mode === 'equal') {
         return calculateEqualSplit(parsedAmount, label, participants);
       } else {
-        if (autoBalancedSplitResult && autoBalancedSplitResult.totalAmount === parsedAmount) {
-          return autoBalancedSplitResult;
+        if (adjustSplitResult && adjustSplitResult.totalAmount === parsedAmount) {
+          return adjustSplitResult;
         }
-        return initializeAutoBalancedSplit(parsedAmount, label, participants);
+        return initializeProportionalSplit(parsedAmount, label, participants);
       }
     } catch {
       return null;
     }
-  }, [parsedAmount, label, participants, mode, autoBalancedSplitResult]);
+  }, [parsedAmount, label, participants, mode, adjustSplitResult]);
 
   // Step 1 validation
   const validateStep1 = (): boolean => {
@@ -288,7 +268,7 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
 
   const handleSelectAdjustMode = () => {
     setMode('adjust');
-    if (!autoBalancedSplitResult || autoBalancedSplitResult.totalAmount !== parsedAmount) {
+    if (!adjustSplitResult || adjustSplitResult.totalAmount !== parsedAmount) {
       initAdjustSplit(participants, parsedAmount, label);
     }
   };
@@ -558,60 +538,44 @@ export const SplitBillSheet: React.FC<SplitBillSheetProps> = ({ isOpen, onClose 
                   </div>
                 )}
 
-                {/* ADJUST MODE VIEW — AUTONOMOUS RESIDUAL BALANCING (PHASE 13B) */}
+                {/* ADJUST MODE VIEW — PROPORTIONAL AUTONOMOUS REBALANCING (PHASE 13C) */}
                 {mode === 'adjust' && splitResult && (
                   <div className="adjust-split-view">
                     {/* Direct Amount Inputs Per Participant */}
                     <div className="adjust-participants-list">
-                      {splitResult.shares.map((share) => {
-                        const isResidual =
-                          share.participantId === (residualParticipantId || splitResult.residualParticipantId);
-
-                        return (
-                          <div
-                            key={share.participantId}
-                            className={`adjust-participant-row ${share.isCurrentUser ? 'current-user-row' : ''}`}
-                          >
-                            <div className="adjust-participant-info">
-                              <span className="adjust-participant-name">
-                                {share.isCurrentUser ? 'You' : share.name}
-                              </span>
-                              {share.isCurrentUser && (
-                                <span className="participant-self-badge">Your Share</span>
-                              )}
-                              {isResidual && (
-                                <span
-                                  className="participant-auto-badge"
-                                  title="This share adjusts automatically to keep the bill balanced"
-                                >
-                                  Auto
-                                </span>
-                              )}
-                              <span className="adjust-participant-pct tabular-nums">
-                                {share.percentage}%
-                              </span>
-                            </div>
-
-                            <div className="adjust-amount-input-wrapper">
-                              <span className="adjust-currency-prefix">{currencySymbol}</span>
-                              <input
-                                type="number"
-                                step="any"
-                                min="0"
-                                className={`adjust-amount-input tabular-nums ${isResidual ? 'is-auto-rebalanced' : ''}`}
-                                placeholder="0.00"
-                                value={customAmountStrings[share.participantId] ?? share.amount.toFixed(2)}
-                                aria-label={`Amount for ${share.name}`}
-                                onChange={(e) => handleAdjustAmountChange(share.participantId, e.target.value)}
-                                onBlur={() => handleAdjustAmountBlur(share.participantId)}
-                              />
-                            </div>
+                      {splitResult.shares.map((share) => (
+                        <div
+                          key={share.participantId}
+                          className={`adjust-participant-row ${share.isCurrentUser ? 'current-user-row' : ''}`}
+                        >
+                          <div className="adjust-participant-info">
+                            <span className="adjust-participant-name">
+                              {share.isCurrentUser ? 'You' : share.name}
+                            </span>
+                            {share.isCurrentUser && (
+                              <span className="participant-self-badge">Your Share</span>
+                            )}
                           </div>
-                        );
-                      })}
+
+                          <div className="adjust-amount-input-wrapper">
+                            <span className="adjust-currency-prefix">{currencySymbol}</span>
+                            <input
+                              type="number"
+                              step="any"
+                              min="0"
+                              className="adjust-amount-input tabular-nums"
+                              placeholder="0.00"
+                              value={customAmountStrings[share.participantId] ?? share.amount.toFixed(2)}
+                              aria-label={`Amount for ${share.name}`}
+                              onChange={(e) => handleAdjustAmountChange(share.participantId, e.target.value)}
+                              onBlur={() => handleAdjustAmountBlur(share.participantId)}
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
 
-                    {/* Reassurance Notice — Autonomous Balancing */}
+                    {/* Reassurance Notice — Autonomous Proportional Balancing */}
                     <div className="adjust-reassurance-row">
                       <span className="adjust-auto-hint">Other shares adjust automatically.</span>
                       <span className="adjust-status-reconciled">✓ Bill fully split</span>

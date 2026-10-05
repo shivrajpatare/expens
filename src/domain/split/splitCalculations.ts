@@ -227,94 +227,35 @@ export function calculateEqualSplit(
   };
 }
 
-/**
- * Selects the next residual participant deterministically when the current
- * residual participant is manually edited by the user.
- * 
- * Rules (Phase 13B Locked Decision):
- * 1. Never choose the participant the user just edited.
- * 2. Prefer an eligible participant who has NOT been manually edited yet.
- *    (Prefer non-current user among unedited so the user's own share remains predictable).
- * 3. Otherwise choose the least recently manually edited participant.
- *    (Prefer non-current user among least recently edited if possible).
- * 4. Deterministic fallback to the first eligible participant.
- */
-export function selectNextResidualParticipant(
-  participants: Participant[],
-  editedParticipantId: string,
-  editHistory: string[] = []
-): string {
-  const eligible = participants.filter((p) => p.id !== editedParticipantId);
-  if (eligible.length === 0) {
-    throw new Error('Cannot balance with fewer than 2 participants');
-  }
-
-  // 1. Prefer unedited participants
-  const unedited = eligible.filter((p) => !editHistory.includes(p.id));
-  if (unedited.length > 0) {
-    const nonUserUnedited = unedited.find((p) => !p.isCurrentUser);
-    return nonUserUnedited ? nonUserUnedited.id : unedited[0].id;
-  }
-
-  // 2. Otherwise choose least recently edited participant (earliest in editHistory)
-  // First check if there is an eligible non-user in editHistory
-  for (const histId of editHistory) {
-    const found = eligible.find((p) => p.id === histId && !p.isCurrentUser);
-    if (found) {
-      return found.id;
-    }
-  }
-
-  // Then check any eligible in editHistory (including current user if only user remains)
-  for (const histId of editHistory) {
-    const found = eligible.find((p) => p.id === histId);
-    if (found) {
-      return found.id;
-    }
-  }
-
-  return eligible[0].id;
-}
-
-export interface AutoBalanceInput {
+export interface ProportionalSplitInput {
   billAmount: number;
   label: string;
   participants: Participant[];
   currentAmounts: Record<string, number>;
-  residualParticipantId?: string;
   editedParticipantId: string;
   newAmount: number;
-  editHistory?: string[];
-}
-
-export interface AutoBalanceResult extends SplitResult {
-  residualParticipantId: string;
-  editHistory: string[];
 }
 
 /**
- * Pure deterministic calculation for autonomous residual balancing.
+ * Pure deterministic calculation for proportional autonomous rebalancing (Phase 13C).
  * 
  * Invariants:
  * 1. SUM(participantAmounts) === billAmount down to the smallest integer currency cent.
- * 2. Edited participant amount is bounded/clamped: 0 <= amount <= maxAllowable.
- * 3. Residual participant receives: totalCents - sum(all other participant cents).
- * 4. Residual amount is mathematically guaranteed >= 0 (no negative amounts ever).
- * 5. If the current residual participant is edited, the residual role is transferred
- *    deterministically to another eligible participant.
- * 6. editHistory is updated with the edited participant at the end (most recent).
+ * 2. Edited participant amount is bounded/clamped: 0 <= amount <= totalBill.
+ * 3. All other participants collectively absorb the remaining bill proportionally based on their prior shares.
+ * 4. Zero fallback: If all other participants previously had 0, the remaining bill is split equally among them.
+ * 5. Every participant amount is mathematically guaranteed >= 0 (no negative amounts ever).
+ * 6. NO Auto participant, NO residual participant, NO residual role transfer.
  * 7. Never mutates input objects.
  */
-export function calculateAutoBalancedSplit({
+export function calculateProportionalSplit({
   billAmount,
   label,
   participants,
   currentAmounts,
-  residualParticipantId,
   editedParticipantId,
-  newAmount,
-  editHistory = []
-}: AutoBalanceInput): AutoBalanceResult {
+  newAmount
+}: ProportionalSplitInput): SplitResult {
   const validation = validateSplitInput(billAmount, label, participants, 'adjust');
   if (!validation.isValid) {
     throw new Error(validation.error || 'Invalid split parameters');
@@ -322,71 +263,97 @@ export function calculateAutoBalancedSplit({
 
   const totalCents = roundToCents(billAmount);
 
-  // 1. Establish the active residual participant ID
-  let activeResidualId = residualParticipantId;
-
-  const participantIds = new Set(participants.map((p) => p.id));
-  if (!activeResidualId || !participantIds.has(activeResidualId)) {
-    const nonUser = [...participants].reverse().find((p) => !p.isCurrentUser);
-    activeResidualId = nonUser ? nonUser.id : participants[participants.length - 1].id;
-  }
-
-  // 2. If the user edited the participant who is currently the residual:
-  // Transfer residual role to another participant deterministically!
-  if (editedParticipantId === activeResidualId) {
-    activeResidualId = selectNextResidualParticipant(
-      participants,
-      editedParticipantId,
-      editHistory
-    );
-  }
-
-  // 3. Update edit history: record editedParticipantId (deduplicating and moving to most recent)
-  const nextEditHistory = [
-    ...editHistory.filter((id) => id !== editedParticipantId),
-    editedParticipantId
-  ];
-
-  // 4. Calculate sum of all OTHER fixed participants (excluding edited and activeResidual)
-  let otherFixedCents = 0;
-  for (const p of participants) {
-    if (p.id !== editedParticipantId && p.id !== activeResidualId) {
-      const existingAmt = currentAmounts[p.id] ?? 0;
-      otherFixedCents += roundToCents(Math.max(0, existingAmt));
-    }
-  }
-
-  // 5. Bound / clamp the edited participant's amount
-  // Maximum allowable amount leaves residual at 0 cents
-  const maxAllowableCents = Math.max(0, totalCents - otherFixedCents);
+  // 1. Clamp the edited participant's requested amount between 0 and totalCents
   const requestedCents = roundToCents(Math.max(0, newAmount));
-  const clampedEditedCents = Math.min(maxAllowableCents, requestedCents);
+  const clampedEditedCents = Math.min(totalCents, requestedCents);
 
-  // 6. Compute residual cents
-  const residualCents = Math.max(0, totalCents - otherFixedCents - clampedEditedCents);
+  // 2. Compute remaining cents to distribute across all other participants
+  const remainingCents = totalCents - clampedEditedCents;
 
-  // 7. Build share amounts map in cents
+  const otherParticipants = participants.filter((p) => p.id !== editedParticipantId);
+  if (otherParticipants.length === 0) {
+    throw new Error('A split requires at least 2 participants.');
+  }
+
+  // 3. Compute sum of previous shares for all other participants
+  let sumOthersOldCents = 0;
+  for (const p of otherParticipants) {
+    const prevAmt = currentAmounts[p.id] ?? 0;
+    sumOthersOldCents += Math.max(0, roundToCents(prevAmt));
+  }
+
   const centsMap: Record<string, number> = {};
-  for (const p of participants) {
-    if (p.id === editedParticipantId) {
-      centsMap[p.id] = clampedEditedCents;
-    } else if (p.id === activeResidualId) {
-      centsMap[p.id] = residualCents;
-    } else {
-      const existingAmt = currentAmounts[p.id] ?? 0;
-      centsMap[p.id] = roundToCents(Math.max(0, existingAmt));
+  centsMap[editedParticipantId] = clampedEditedCents;
+
+  if (sumOthersOldCents > 0) {
+    // Proportional redistribution
+    interface OtherShareItem {
+      id: string;
+      rawCents: number;
+      allocatedCents: number;
+      fraction: number;
+      oldCents: number;
+      index: number;
     }
+
+    const items: OtherShareItem[] = otherParticipants.map((p, idx) => {
+      const prevAmt = currentAmounts[p.id] ?? 0;
+      const oldCents = Math.max(0, roundToCents(prevAmt));
+      const rawCents = (oldCents / sumOthersOldCents) * remainingCents;
+      const allocatedCents = Math.floor(rawCents);
+      const fraction = rawCents - allocatedCents;
+      return {
+        id: p.id,
+        rawCents,
+        allocatedCents,
+        fraction,
+        oldCents,
+        index: idx
+      };
+    });
+
+    const sumAllocated = items.reduce((acc, item) => acc + item.allocatedCents, 0);
+    let discrepancy = remainingCents - sumAllocated;
+
+    // Distribute remaining cents deterministically by largest fraction, then largest oldCents, then index
+    items.sort((a, b) => {
+      if (Math.abs(b.fraction - a.fraction) > 1e-6) {
+        return b.fraction - a.fraction;
+      }
+      if (b.oldCents !== a.oldCents) {
+        return b.oldCents - a.oldCents;
+      }
+      return a.index - b.index;
+    });
+
+    for (let i = 0; i < items.length && discrepancy > 0; i++) {
+      items[i].allocatedCents += 1;
+      discrepancy -= 1;
+    }
+
+    for (const item of items) {
+      centsMap[item.id] = item.allocatedCents;
+    }
+  } else {
+    // Zero Fallback: If all other participants were previously ₹0, divide remaining equally
+    const baseCents = Math.floor(remainingCents / otherParticipants.length);
+    const remCents = remainingCents % otherParticipants.length;
+
+    otherParticipants.forEach((p, idx) => {
+      const extra = idx < remCents ? 1 : 0;
+      centsMap[p.id] = baseCents + extra;
+    });
   }
 
-  // Verify total reconciliation down to single cent
-  const finalSumCents = Object.values(centsMap).reduce((acc, c) => acc + c, 0);
-  if (finalSumCents !== totalCents) {
-    centsMap[activeResidualId] += (totalCents - finalSumCents);
+  // Final exact reconciliation check
+  const finalSumCents = participants.reduce((acc, p) => acc + (centsMap[p.id] ?? 0), 0);
+  if (finalSumCents !== totalCents && otherParticipants.length > 0) {
+    centsMap[otherParticipants[0].id] += (totalCents - finalSumCents);
   }
 
-  // 8. Build ParticipantShare objects
+  // 4. Build ParticipantShare objects
   const shares: ParticipantShare[] = participants.map((p) => {
-    const pCents = centsMap[p.id];
+    const pCents = centsMap[p.id] ?? 0;
     const amount = pCents / 100;
     const percentage = totalCents > 0 ? Number(((pCents / totalCents) * 100).toFixed(2)) : 0;
 
@@ -395,8 +362,7 @@ export function calculateAutoBalancedSplit({
       name: p.name.trim(),
       isCurrentUser: p.isCurrentUser,
       percentage,
-      amount,
-      isResidual: p.id === activeResidualId
+      amount
     };
   });
 
@@ -410,39 +376,22 @@ export function calculateAutoBalancedSplit({
     label: label.trim(),
     mode: 'adjust',
     shares,
-    userShare,
-    residualParticipantId: activeResidualId,
-    editHistory: nextEditHistory
+    userShare
   };
 }
 
 /**
- * Initializes autonomous split balancing from an equal split baseline.
+ * Initializes autonomous split balancing from an equal split baseline (Phase 13C).
  */
-export function initializeAutoBalancedSplit(
+export function initializeProportionalSplit(
   billAmount: number,
   label: string,
   participants: Participant[]
-): AutoBalanceResult {
+): SplitResult {
   const equalSplit = calculateEqualSplit(billAmount, label, participants);
-  const nonUser = [...participants].reverse().find((p) => !p.isCurrentUser);
-  const residualParticipantId = nonUser ? nonUser.id : participants[participants.length - 1].id;
-
-  const shares: ParticipantShare[] = equalSplit.shares.map((s) => ({
-    ...s,
-    isResidual: s.participantId === residualParticipantId
-  }));
-
-  const userShare = shares.find((s) => s.isCurrentUser)!;
-
   return {
-    totalAmount: billAmount,
-    label: label.trim(),
-    mode: 'adjust',
-    shares,
-    userShare,
-    residualParticipantId,
-    editHistory: []
+    ...equalSplit,
+    mode: 'adjust'
   };
 }
 
